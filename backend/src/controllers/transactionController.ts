@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
 import Transaction from '../models/Transaction';
 import { IUser } from '../models/User';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const parseTransactionWithAI = async (req: Request, res: Response) => {
 	const { text } = req.body;
@@ -13,32 +10,26 @@ const parseTransactionWithAI = async (req: Request, res: Response) => {
 		return res.status(400).json({ message: 'Text input is required' });
 	}
 
-	try {
-		const today = new Date().toISOString().slice(0, 10);
-		const prompt = `
-      You are an expert financial assistant. Parse the following transaction text and return a JSON object with the keys: "amount", "description", "category", "type", and "date".
-      The transaction "type" must be either "income" or "expense".
-      The "category" should be one of the following: Food, Gas, Groceries, Bills, Subscription, Shopping, Entertainment, Health, Transport, Salary, Other.
-      The "date" must be in YYYY-MM-DD format. If no date is mentioned, assume the date is ${today}.
-      If any value cannot be determined, use null for that key.
+	const today = new Date().toISOString().slice(0, 10);
+	const prompt = `
+      You are an expert financial assistant. Today's date is ${today}.
+      Parse the following transaction text and return ONLY a valid JSON object with the keys: "amount", "description", "category", "type", and "date".
+      
+      RULES:
+      - The "type" must be either "income" or "expense".
+      - The "category" must be one of: Food, Gas, Groceries, Bills, Subscription, Shopping, Entertainment, Health, Transport, Salary, Other.
+      - The "date" must be in YYYY-MM-DD format. If no specific date is mentioned, assume today's date.
+      - If the text mentions a relative date like "yesterday", "last week", or "last month", calculate the correct date based on today's date.
+      
+      EXAMPLES (Today is ${today}):
+      1. Text: "Coffee at Starbucks $6.50" -> JSON: {"amount": 6.50, "description": "Coffee at Starbucks", "category": "Food", "type": "expense", "date": "${today}"}
+      2. Text: "Got paid $3500 salary today" -> JSON: {"amount": 3500, "description": "Salary", "category": "Salary", "type": "income", "date": "${today}"}
+      3. Text: "Netflix subscription for last month $16" -> JSON: {"amount": 16, "description": "Netflix subscription", "category": "Subscription", "type": "expense", "date": "2025-07-30"}
 
-      Example 1:
-      Text: "Coffee at Starbucks $6.50"
-      JSON: {"amount": 6.50, "description": "Coffee at Starbucks", "category": "Food", "type": "expense", "date": "${today}"}
-
-      Example 2:
-      Text: "Got paid $3500 salary today"
-      JSON: {"amount": 3500, "description": "Salary", "category": "Salary", "type": "income", "date": "${today}"}
-
-      Example 3:
-      Text: "Netflix subscription $15.99 yesterday"
-      JSON: {"amount": 15.99, "description": "Netflix subscription", "category": "Subscription", "type": "expense", "date": "2025-08-29"}
-
-      Now parse the following text:
-      Text: "${text}"
-      JSON:
+      Now parse this text: "${text}"
     `;
 
+	try {
 		const response = await axios.post(
 			'https://openrouter.ai/api/v1/chat/completions',
 			{
@@ -65,22 +56,35 @@ const parseTransactionWithAI = async (req: Request, res: Response) => {
 			jsonStartIndex,
 			jsonEndIndex + 1
 		);
-
 		const parsedJson = JSON.parse(jsonString);
 
 		res.status(200).json(parsedJson);
 	} catch (error) {
-		console.error(error);
+		console.error('Error parsing with OpenRouter:', error);
 		res.status(500).json({ message: 'Failed to parse transaction with AI' });
 	}
 };
 
 const getTransactions = async (req: Request, res: Response) => {
 	const user = (req as any).user as IUser;
+	const { startDate, endDate } = req.query;
+
 	try {
-		const transactions = await Transaction.find({ user: user._id }).sort({
-			date: -1,
-		});
+		const query: any = { user: user._id };
+
+		if (startDate || endDate) {
+			query.date = {};
+			if (startDate) {
+				query.date.$gte = new Date(startDate as string);
+			}
+			if (endDate) {
+				const end = new Date(endDate as string);
+				end.setHours(23, 59, 59, 999);
+				query.date.$lte = end;
+			}
+		}
+
+		const transactions = await Transaction.find(query).sort({ date: -1 });
 		res.status(200).json(transactions);
 	} catch (error) {
 		res.status(500).json({ message: 'Server Error' });
