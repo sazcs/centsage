@@ -1,6 +1,55 @@
 import { Request, Response } from 'express';
 import Transaction from '../models/Transaction';
 import { IUser } from '../models/User';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
+const parseTransactionWithAI = async (req: Request, res: Response) => {
+	const { text } = req.body;
+
+	if (!text) {
+		return res.status(400).json({ message: 'Text input is required' });
+	}
+
+	try {
+		const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+		const today = new Date().toISOString().slice(0, 10);
+
+		const prompt = `
+      You are an expert financial assistant. Parse the following transaction text and return a JSON object with the keys: "amount", "description", "category", "type", and "date".
+      The transaction "type" must be either "income" or "expense".
+      The "category" should be one of the following: Food, Gas, Groceries, Bills, Subscription, Shopping, Entertainment, Health, Transport, Salary, Other.
+      The "date" must be in YYYY-MM-DD format. If no date is mentioned, assume the date is ${today}.
+      If any value cannot be determined, use null for that key.
+
+      Example 1:
+      Text: "Coffee at Starbucks $6.50"
+      JSON: {"amount": 6.50, "description": "Coffee at Starbucks", "category": "Food", "type": "expense", "date": "${today}"}
+
+      Example 2:
+      Text: "Got paid $3500 salary today"
+      JSON: {"amount": 3500, "description": "Salary", "category": "Salary", "type": "income", "date": "${today}"}
+
+      Example 3:
+      Text: "Netflix subscription $15.99 yesterday"
+      JSON: {"amount": 15.99, "description": "Netflix subscription", "category": "Subscription", "type": "expense", "date": "2025-08-29"}
+
+      Now parse the following text:
+      Text: "${text}"
+      JSON:
+    `;
+
+		const result = await model.generateContent(prompt);
+		const responseText = result.response.text();
+		const parsedJson = JSON.parse(responseText);
+
+		res.status(200).json(parsedJson);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Failed to parse transaction with AI' });
+	}
+};
 
 const getTransactions = async (req: Request, res: Response) => {
 	const user = (req as any).user as IUser;
@@ -72,6 +121,7 @@ const deleteTransaction = async (req: Request, res: Response) => {
 };
 
 export {
+	parseTransactionWithAI,
 	getTransactions,
 	createTransaction,
 	updateTransaction,

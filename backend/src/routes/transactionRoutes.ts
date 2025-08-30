@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+	parseTransactionWithAI,
 	getTransactions,
 	createTransaction,
 	updateTransaction,
@@ -8,6 +9,8 @@ import {
 import { protect } from '../middleware/authMiddleware';
 
 const router = express.Router();
+
+router.post('/parse', protect, parseTransactionWithAI);
 
 router
 	.route('/')
