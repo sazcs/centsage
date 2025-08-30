@@ -1,15 +1,35 @@
-import type React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
 
-export function SmartEntry() {
+interface SmartEntryProps {
+	onTransactionAdded: () => void;
+}
+
+export function SmartEntry({ onTransactionAdded }: SmartEntryProps) {
 	const [value, setValue] = useState('');
+	const [loading, setLoading] = useState(false);
 
-	const onSubmit = (e: React.FormEvent) => {
+	const onSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log('[v0] Smart Entry submitted:', value);
-		setValue('');
+		if (!value) return;
+
+		setLoading(true);
+		try {
+			const parseRes = await axios.post(
+				'http://localhost:5001/api/transactions/parse',
+				{ text: value }
+			);
+			const parsedData = parseRes.data;
+			await axios.post('http://localhost:5001/api/transactions', parsedData);
+			onTransactionAdded();
+			setValue('');
+		} catch (error) {
+			console.error('Failed to add transaction:', error);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
@@ -19,12 +39,15 @@ export function SmartEntry() {
 			</label>
 			<Input
 				id='smart-entry'
-				placeholder='e.g. "Starbucks $4.50 Coffee"'
+				placeholder='e.g. "Starbucks $6.50 coffee"'
 				value={value}
 				onChange={(e) => setValue(e.target.value)}
 				className='flex-1'
+				disabled={loading}
 			/>
-			<Button type='submit'>Submit</Button>
+			<Button type='submit' disabled={loading}>
+				{loading ? 'Adding...' : 'Submit'}
+			</Button>
 		</form>
 	);
 }

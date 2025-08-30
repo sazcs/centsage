@@ -14,47 +14,58 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
+import type { Transaction } from '@/pages/DashboardPage';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import axios from 'axios';
+import { EditTransactionDialog } from './EditTransactionDialog';
 
-type Txn = {
-	id: string;
-	description: string;
-	category: string;
-	date: string;
-	amount: string;
-};
+interface TransactionsTableProps {
+	transactions: Transaction[];
+	loading: boolean;
+	onTransactionChange: () => void;
+}
 
-const rows: Txn[] = [
-	{
-		id: '1',
-		description: 'Salary',
-		category: 'Income',
-		date: '2025-08-01',
-		amount: '+$3,500.00',
-	},
-	{
-		id: '2',
-		description: 'Rent - August',
-		category: 'Housing',
-		date: '2025-08-02',
-		amount: '-$1,200.00',
-	},
-	{
-		id: '3',
-		description: 'Groceries - Market',
-		category: 'Groceries',
-		date: '2025-08-05',
-		amount: '-$145.35',
-	},
-	{
-		id: '4',
-		description: 'Gym Membership',
-		category: 'Health',
-		date: '2025-08-07',
-		amount: '-$45.00',
-	},
-];
+export function TransactionsTable({
+	transactions,
+	loading,
+	onTransactionChange,
+}: TransactionsTableProps) {
+	const formatCurrency = (amount: number) => {
+		return new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency: 'USD',
+		}).format(amount);
+	};
+	const formatDate = (dateString: string) => {
+		return new Date(dateString).toLocaleDateString('en-US', {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+		});
+	};
 
-export function TransactionsTable() {
+	if (loading) {
+		return (
+			<div className='space-y-2'>
+				{[...Array(4)].map((_, i) => (
+					<Skeleton key={i} className='h-12 w-full' />
+				))}
+			</div>
+		);
+	}
+
 	return (
 		<div className='overflow-x-auto'>
 			<Table>
@@ -68,26 +79,30 @@ export function TransactionsTable() {
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{rows.map((r) => (
-						<TableRow key={r.id}>
-							<TableCell className='font-medium'>{r.description}</TableCell>
+					{transactions.map((txn) => (
+						<TableRow key={txn._id}>
+							<TableCell className='font-medium'>{txn.description}</TableCell>
 							<TableCell className='text-muted-foreground'>
-								{r.category}
+								{txn.category}
 							</TableCell>
-							<TableCell className='text-muted-foreground'>{r.date}</TableCell>
+							<TableCell className='text-muted-foreground'>
+								{formatDate(txn.date)}
+							</TableCell>
 							<TableCell className='text-right'>
 								<span
 									className={
-										r.amount.startsWith('-')
-											? 'text-red-500'
-											: 'text-emerald-500'
+										txn.type === 'expense' ? 'text-red-500' : 'text-emerald-500'
 									}
 								>
-									{r.amount}
+									{txn.type === 'expense' ? '-' : '+'}
+									{formatCurrency(txn.amount)}
 								</span>
 							</TableCell>
 							<TableCell className='text-right'>
-								<RowActions id={r.id} />
+								<RowActions
+									transaction={txn}
+									onTransactionChange={onTransactionChange}
+								/>
 							</TableCell>
 						</TableRow>
 					))}
@@ -97,22 +112,70 @@ export function TransactionsTable() {
 	);
 }
 
-function RowActions({ id }: { id: string }) {
-	const onEdit = () => console.log('[v0] Edit txn:', id);
-	const onDelete = () => console.log('[v0] Delete txn:', id);
+function RowActions({
+	transaction,
+	onTransactionChange,
+}: {
+	transaction: Transaction;
+	onTransactionChange: () => void;
+}) {
+	const handleDelete = async () => {
+		try {
+			await axios.delete(
+				`http://localhost:5001/api/transactions/${transaction._id}`
+			);
+			toast.success('Success', {
+				description: 'Transaction deleted successfully.',
+			});
+			onTransactionChange();
+		} catch (error) {
+			console.error('Failed to delete transaction', error);
+			toast.error('Error', { description: 'Failed to delete transaction.' });
+		}
+	};
 
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button variant='ghost' size='icon' aria-label='Row actions'>
-					<MoreHorizontal className='h-4 w-4' />
-					<span className='sr-only'>Open actions</span>
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align='end'>
-				<DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-				<DropdownMenuItem onClick={onDelete}>Delete</DropdownMenuItem>
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<AlertDialog>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button variant='ghost' size='icon' aria-label='Row actions'>
+						<MoreHorizontal className='h-4 w-4' />
+						<span className='sr-only'>Open actions</span>
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align='end'>
+					<EditTransactionDialog
+						transaction={transaction}
+						onTransactionChange={onTransactionChange}
+					>
+						<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+							Edit
+						</DropdownMenuItem>
+					</EditTransactionDialog>
+					<AlertDialogTrigger asChild>
+						<DropdownMenuItem
+							onSelect={(e) => e.preventDefault()}
+							className='text-red-500'
+						>
+							Delete
+						</DropdownMenuItem>
+					</AlertDialogTrigger>
+				</DropdownMenuContent>
+			</DropdownMenu>
+
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+					<AlertDialogDescription>
+						This action cannot be undone. This will permanently delete this
+						transaction record.
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel>Cancel</AlertDialogCancel>
+					<AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }

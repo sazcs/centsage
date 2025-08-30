@@ -12,9 +12,10 @@ const googleAuthCallback = (req: Request, res: Response) => {
 	const user = req.user as IUser;
 	if (user) {
 		const token = generateToken(user.id);
-		res.redirect(`http://localhost:5173?token=${token}`);
+		// Updated Redirect URL
+		res.redirect(`http://localhost:5173/dashboard?token=${token}`);
 	} else {
-		res.redirect(`http://localhost:5173/login/error`);
+		res.redirect(`http://localhost:5173/login?error=true`);
 	}
 };
 
