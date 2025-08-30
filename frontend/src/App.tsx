@@ -1,8 +1,8 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage';
-import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 const router = createBrowserRouter([
 	{
@@ -20,8 +20,8 @@ const router = createBrowserRouter([
 		],
 	},
 	{
-		path: '/login',
-		element: <LoginPage />,
+		path: '*',
+		element: <NotFoundPage />,
 	},
 ]);
 

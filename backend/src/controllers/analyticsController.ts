@@ -2,11 +2,33 @@ import { Request, Response } from 'express';
 import Transaction from '../models/Transaction';
 import { IUser } from '../models/User';
 
+// Helper function to build the date query
+const buildDateQuery = (startDate?: any, endDate?: any) => {
+	const dateQuery: any = {};
+	if (startDate) {
+		dateQuery.$gte = new Date(startDate);
+	}
+	if (endDate) {
+		// Set to the end of the day
+		const end = new Date(endDate);
+		end.setHours(23, 59, 59, 999);
+		dateQuery.$lte = end;
+	}
+	return dateQuery;
+};
+
 const getSummary = async (req: Request, res: Response) => {
 	const user = (req as any).user as IUser;
+	const { startDate, endDate } = req.query;
 	try {
+		const dateQuery = buildDateQuery(startDate, endDate);
+		const matchQuery: any = { user: user._id };
+		if (startDate || endDate) {
+			matchQuery.date = dateQuery;
+		}
+
 		const summary = await Transaction.aggregate([
-			{ $match: { user: user._id } },
+			{ $match: matchQuery },
 			{
 				$group: {
 					_id: '$type',
@@ -27,9 +49,16 @@ const getSummary = async (req: Request, res: Response) => {
 
 const getSpendingByCategory = async (req: Request, res: Response) => {
 	const user = (req as any).user as IUser;
+	const { startDate, endDate } = req.query;
 	try {
+		const dateQuery = buildDateQuery(startDate, endDate);
+		const matchQuery: any = { user: user._id, type: 'expense' };
+		if (startDate || endDate) {
+			matchQuery.date = dateQuery;
+		}
+
 		const categories = await Transaction.aggregate([
-			{ $match: { user: user._id, type: 'expense' } },
+			{ $match: matchQuery },
 			{
 				$group: {
 					_id: '$category',
@@ -47,9 +76,16 @@ const getSpendingByCategory = async (req: Request, res: Response) => {
 
 const getSpendingTrends = async (req: Request, res: Response) => {
 	const user = (req as any).user as IUser;
+	const { startDate, endDate } = req.query;
 	try {
+		const dateQuery = buildDateQuery(startDate, endDate);
+		const matchQuery: any = { user: user._id, type: 'expense' };
+		if (startDate || endDate) {
+			matchQuery.date = dateQuery;
+		}
+
 		const trends = await Transaction.aggregate([
-			{ $match: { user: user._id, type: 'expense' } },
+			{ $match: matchQuery },
 			{
 				$group: {
 					_id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
@@ -57,7 +93,6 @@ const getSpendingTrends = async (req: Request, res: Response) => {
 				},
 			},
 			{ $sort: { _id: 1 } },
-			{ $limit: 30 },
 		]);
 
 		res.status(200).json(trends);

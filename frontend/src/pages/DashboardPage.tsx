@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import useApi from '../hooks/useApi';
+import { startOfWeek, startOfMonth, format } from 'date-fns';
 
 export interface SummaryData {
 	income: number;
@@ -20,36 +21,49 @@ export interface CategorySpending {
 	total: number;
 }
 export interface TrendData {
-	_id: string; // This will be the date, e.g., "2025-08-30"
+	_id: string;
 	total: number;
 }
+export type FilterOption = 'week' | 'month' | 'all';
 
 const DashboardPage = () => {
 	const [searchTerm, setSearchTerm] = useState('');
+	const [filter, setFilter] = useState<FilterOption>('all');
+
+	const dateRange = useMemo(() => {
+		const today = new Date();
+		if (filter === 'week') {
+			return `?startDate=${format(startOfWeek(today), 'yyyy-MM-dd')}`;
+		}
+		if (filter === 'month') {
+			return `?startDate=${format(startOfMonth(today), 'yyyy-MM-dd')}`;
+		}
+		return ''; // All time
+	}, [filter]);
 
 	const {
 		data: summaryData,
 		loading: summaryLoading,
 		refetch: refetchSummary,
-	} = useApi<SummaryData>('/analytics/summary');
+	} = useApi<SummaryData>(`/analytics/summary${dateRange}`);
 
 	const {
 		data: transactionsData,
 		loading: transactionsLoading,
 		refetch: refetchTransactions,
-	} = useApi<Transaction[]>('/transactions');
+	} = useApi<Transaction[]>(`/transactions${dateRange}`);
 
 	const {
 		data: categoriesData,
 		loading: categoriesLoading,
 		refetch: refetchCategories,
-	} = useApi<CategorySpending[]>('/analytics/categories');
+	} = useApi<CategorySpending[]>(`/analytics/categories${dateRange}`);
 
 	const {
 		data: trendsData,
 		loading: trendsLoading,
 		refetch: refetchTrends,
-	} = useApi<TrendData[]>('/analytics/trends');
+	} = useApi<TrendData[]>(`/analytics/trends${dateRange}`);
 
 	const handleTransactionChange = () => {
 		refetchSummary();
@@ -79,6 +93,8 @@ const DashboardPage = () => {
 			spendingTrendsLoading={trendsLoading}
 			searchTerm={searchTerm}
 			setSearchTerm={setSearchTerm}
+			currentFilter={filter}
+			onFilterChange={setFilter}
 		/>
 	);
 };

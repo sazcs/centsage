@@ -8,6 +8,7 @@ import type {
 	CategorySpending,
 	SummaryData,
 	TrendData,
+	FilterOption,
 } from '@/pages/DashboardPage';
 import { Toaster } from 'sonner';
 
@@ -23,6 +24,8 @@ interface DashboardLayoutProps {
 	spendingTrendsLoading: boolean;
 	searchTerm: string;
 	setSearchTerm: (term: string) => void;
+	currentFilter: FilterOption;
+	onFilterChange: (filter: FilterOption) => void;
 }
 
 export default function DashboardLayout({
@@ -37,6 +40,8 @@ export default function DashboardLayout({
 	spendingTrendsLoading,
 	searchTerm,
 	setSearchTerm,
+	currentFilter,
+	onFilterChange,
 }: DashboardLayoutProps) {
 	return (
 		<>
@@ -53,11 +58,9 @@ export default function DashboardLayout({
 
 					<section
 						aria-labelledby='analytics-and-transactions'
-						className='mt-8 grid grid-cols-1 gap-6 md:mt-10 lg:grid-cols-5' // Changed grid to 5 cols for better layout
+						className='mt-8 grid grid-cols-1 gap-6 md:mt-10 lg:grid-cols-5'
 					>
 						<div className='flex flex-col gap-6 lg:col-span-2'>
-							{' '}
-							{/* Left column takes 2 of 5 cols */}
 							<div className='flex flex-col'>
 								<h2 className='text-pretty text-lg font-medium text-foreground'>
 									Spending by Category
@@ -83,14 +86,14 @@ export default function DashboardLayout({
 						</div>
 
 						<div className='lg:col-span-3'>
-							{' '}
-							{/* Right column takes 3 of 5 cols */}
 							<TransactionsSection
 								transactions={transactions}
 								loading={transactionsLoading}
 								onTransactionChange={onTransactionChange}
 								searchTerm={searchTerm}
 								setSearchTerm={setSearchTerm}
+								currentFilter={currentFilter}
+								onFilterChange={onFilterChange}
 							/>
 						</div>
 					</section>

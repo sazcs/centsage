@@ -1,6 +1,8 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { ThemeToggle } from '../ThemeToggle';
+import { Link } from 'react-router-dom';
 
 export function HeaderBar() {
 	const { user, logout } = useAuth();
@@ -14,22 +16,22 @@ export function HeaderBar() {
 	};
 
 	return (
-		<header className='flex items-center justify-between'>
-			<div className='flex items-center gap-2'>
-				<div
-					aria-hidden='true'
-					className='h-8 w-8 rounded-md bg-emerald-500'
-					title='CentSage'
+		<header className='flex w-full items-center justify-between py-2'>
+			<Link to='/dashboard' className='flex items-center gap-2'>
+				<img
+					src='/logo.png'
+					alt='CentSage Vault Logo'
+					className='h-8 w-8 object-contain'
 				/>
 				<h1 className='text-balance text-xl font-semibold tracking-tight text-foreground'>
 					CentSage
 				</h1>
-			</div>
-
+			</Link>
 			{user && (
-				<div className='flex items-center gap-3'>
+				<div className='flex items-center gap-4'>
+					<ThemeToggle />
 					<div className='flex items-center gap-2'>
-						<span className='text-sm text-muted-foreground'>
+						<span className='hidden text-sm text-muted-foreground sm:inline'>
 							{user.displayName}
 						</span>
 						<Avatar className='h-8 w-8'>
