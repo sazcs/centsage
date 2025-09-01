@@ -11,6 +11,10 @@ import { Bot, BarChart, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
+	const apiBaseUrl =
+		import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+	const googleLoginUrl = `${apiBaseUrl}/auth/google`;
+
 	const features = [
 		{
 			icon: <Bot className='h-6 w-6' />,
@@ -106,7 +110,7 @@ export default function LandingPage() {
 				<div className='flex items-center space-x-2'>
 					<div className='grid flex-1 gap-2'>
 						<a
-							href='http://localhost:5001/api/auth/google'
+							href={googleLoginUrl}
 							className='inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground'
 						>
 							<svg className='h-4 w-4' viewBox='0 0 24 24'>
