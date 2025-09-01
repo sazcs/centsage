@@ -54,10 +54,7 @@ export function SmartEntry({
 
 		setLoading(true);
 		try {
-			const parseRes = await axios.post(
-				'http://localhost:5001/api/transactions/parse',
-				{ text: value }
-			);
+			const parseRes = await axios.post('/transactions/parse', { text: value });
 			const parsedData = parseRes.data;
 
 			setEditDescription(parsedData.description || '');
@@ -99,7 +96,7 @@ export function SmartEntry({
 		};
 
 		try {
-			await axios.post('http://localhost:5001/api/transactions', finalData);
+			await axios.post('/transactions', finalData);
 			toast.success('Transaction Added', {
 				description: 'Your transaction has been saved.',
 			});

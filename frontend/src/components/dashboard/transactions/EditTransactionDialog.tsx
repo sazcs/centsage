@@ -88,10 +88,7 @@ export function EditTransactionDialog({
 		};
 
 		try {
-			await axios.put(
-				`http://localhost:5001/api/transactions/${transaction._id}`,
-				updatedData
-			);
+			await axios.put(`/transactions/${transaction._id}`, updatedData);
 			toast.success('Transaction Updated', {
 				description: 'Your transaction has been saved.',
 			});
