@@ -6,6 +6,7 @@ import {
 	type ReactNode,
 } from 'react';
 import axios from 'axios';
+import apiClient from '@/api/axios';
 
 export interface User {
 	_id: string;
@@ -22,8 +23,6 @@ interface IAuthContext {
 }
 
 const AuthContext = createContext<IAuthContext | null>(null);
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const [token, setToken] = useState<string | null>(null);
@@ -52,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 					'Authorization'
 				] = `Bearer ${storedToken}`;
 				try {
-					const { data } = await axios.get(`${API_BASE_URL}/auth/profile`);
+					const { data } = await apiClient.get('/auth/profile');
 					setUser(data);
 				} catch (error) {
 					console.error('Failed to fetch user profile', error);

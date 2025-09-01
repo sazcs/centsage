@@ -27,8 +27,8 @@ import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CATEGORIES } from '@/lib/categories';
-import axios from 'axios';
 import { toast } from 'sonner';
+import apiClient from '@/api/axios';
 
 interface SmartEntryProps {
 	onTransactionAdded: () => void;
@@ -54,7 +54,9 @@ export function SmartEntry({
 
 		setLoading(true);
 		try {
-			const parseRes = await axios.post('/transactions/parse', { text: value });
+			const parseRes = await apiClient.post('/transactions/parse', {
+				text: value,
+			});
 			const parsedData = parseRes.data;
 
 			setEditDescription(parsedData.description || '');
@@ -96,7 +98,7 @@ export function SmartEntry({
 		};
 
 		try {
-			await axios.post('/transactions', finalData);
+			await apiClient.post('/transactions', finalData);
 			toast.success('Transaction Added', {
 				description: 'Your transaction has been saved.',
 			});

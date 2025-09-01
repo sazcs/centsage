@@ -28,8 +28,8 @@ import {
 	AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import axios from 'axios';
 import { EditTransactionDialog } from './EditTransactionDialog';
+import apiClient from '@/api/axios';
 
 interface TransactionsTableProps {
 	transactions: Transaction[];
@@ -121,7 +121,7 @@ function RowActions({
 }) {
 	const handleDelete = async () => {
 		try {
-			await axios.delete(`/transactions/${transaction._id}`);
+			await apiClient.delete(`/transactions/${transaction._id}`);
 			toast.success('Success', {
 				description: 'Transaction deleted successfully.',
 			});
