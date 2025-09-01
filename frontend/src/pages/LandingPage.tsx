@@ -11,8 +11,7 @@ import { Bot, BarChart, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
-	const apiBaseUrl =
-		import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 	const googleLoginUrl = `${apiBaseUrl}/auth/google`;
 
 	const features = [
