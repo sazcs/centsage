@@ -10,7 +10,7 @@ import type {
 	TrendData,
 	FilterOption,
 } from '@/pages/DashboardPage';
-import { Toaster } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 
 interface DashboardLayoutProps {
 	summaryData: SummaryData | null;
