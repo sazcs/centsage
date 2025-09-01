@@ -14,12 +14,22 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+const corsOptions = {
+	origin: process.env.CLIENT_URL || 'http://localhost:5173',
+	methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+	allowedHeaders: 'Content-Type,Authorization',
+	credentials: true,
+};
+app.use(cors(corsOptions));
 
+app.use(express.json());
 app.use(passport.initialize());
 
 const PORT = process.env.PORT;
+
+app.get('/api/health', (req, res) => {
+	res.status(200).json({ status: 'ok', message: 'Backend is healthy' });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
